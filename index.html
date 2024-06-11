@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas to Python</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .canvas-container {
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated; /* Ensure the scaling retains the pixel look */
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas id="drawingCanvas" width="28" height="28"></canvas>
+    </div>
+    <div>
+        <button id="sendButton">send img</button>
+        <button id="clearButton">clear canvas</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const context = canvas.getContext('2d');
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(event) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((event.clientX - rect.left) * scaleX);
+            const y = Math.floor((event.clientY - rect.top) * scaleY);
+            context.fillStyle = 'white';
+            context.fillRect(x, y, 1, 1);
+        }
+
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const dataURL = canvas.toDataURL('image/png');
+            console.log('Sending data URL:', dataURL);
+            fetch('http://127.0.0.1:5000/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: dataURL })
+            })
+            .then(response => response.json())
+            .then(data => console.log('Success:', data))
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('clearButton').addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        });
+    </script>
+</body>
+</html>

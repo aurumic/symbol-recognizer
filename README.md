@@ -17,23 +17,23 @@ to use:
 
 - activate venv :
 
-in cmd - `venv\Scripts\activate.bat`  
-in powershell - `venv\Scripts\Activate.ps1`
+  in cmd - `venv\Scripts\activate.bat`  
+  in powershell - `venv\Scripts\Activate.ps1`
 
 
 - install python dependencies :
 
-`pip install -r ./neural_network/requirements.txt`
+  `pip install -r ./neural_network/requirements.txt`
 
 
 - start app.py :
 
-`python ./neural_network/app.py`
+  `python ./neural_network/app.py`
 
 
 - start svelte dev server :
 
-`npm run dev`
+  `npm run dev`
 
 
 volia.

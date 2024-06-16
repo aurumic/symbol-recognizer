@@ -1,6 +1,10 @@
 import tensorflow as tf
+from tensorflow.keras import layers, models
 import numpy as np
 import scipy.io
+
+def preprocess_image(image, label):
+    return image, label
 
 dataset_path = './datasets/emnist-balanced.mat'
 
@@ -20,29 +24,56 @@ x_test = x_test.reshape((-1, 28, 28, 1), order='A')
 y_train = y_train.astype(np.int32).flatten()
 y_test = y_test.astype(np.int32).flatten()
 
-train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(32).shuffle(buffer_size=1024)
-test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(32)
+train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(buffer_size=1024)
+test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 
-loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+train_dataset = train_dataset.map(preprocess_image).shuffle(buffer_size=10000).batch(128).prefetch(buffer_size=tf.data.AUTOTUNE)
+test_dataset = test_dataset.batch(128).prefetch(buffer_size=tf.data.AUTOTUNE)
 
-model = tf.keras.models.Sequential(
-    [
-        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(256, activation='relu'),
-        tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Dense(256, activation='relu'),
-        tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Dense(47, activation='softmax'),
-    ]
-)
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+model = models.Sequential()
+
+# Input Layer
+model.add(layers.Input(shape=(28, 28, 1)))
+
+# Convolutional Block 1
+model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.25))
+# Convolutional Block 2
+model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.25))
+# Convolutional Block 3
+model.add(layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.25))
+# Flatten and Dense Layers
+model.add(layers.Flatten())
+model.add(layers.Dense(512, activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(128, activation='relu'))
+model.add(layers.BatchNormalization())
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(47, activation='softmax'))
+
+
 
 model.compile(optimizer="adam", loss=loss_fn, metrics=["accuracy"])
 
-model.fit(train_dataset, epochs=10, validation_data=test_dataset)
+model.fit(train_dataset, epochs=10, batch_size=128, validation_data=test_dataset)
 
 model.save("model.keras")

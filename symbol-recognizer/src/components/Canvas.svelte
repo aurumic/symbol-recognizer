@@ -1,14 +1,18 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { clearCanvas } from "../lib/stores/clearCanvas";
+    import { predictions } from "../lib/stores/predictions";
 
     let canvas: HTMLCanvasElement;
     let context: CanvasRenderingContext2D | null = null;
     let drawing: boolean = false;
+    let intervalId: number | null = null;
 
-    let line_width = 0.8;
+    let interval = 100;
+    let line_width = 0.9;
 
-    const startDrawing = () => { drawing = true };
-    const stopDrawing = () => { drawing = false };
+    const startDrawing = () => { drawing = true; startInterval() };
+    const stopDrawing = () => { drawing = false; stopInterval() };
 
     const draw = (event: MouseEvent) => {
         if (!drawing) return;
@@ -65,21 +69,41 @@
                 }
 
                 const responseData = await response.json();
-                console.log('Success:', responseData);
+                console.log('response recieved');
+                predictions.set(responseData)
             } else {
-                console.log("compressed canvas error");
+                console.log("canvas compression error");
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('error:', error);
         }
     };
+  
+    const startInterval = () => {
+        if (intervalId === null) {
+            intervalId = setInterval(sendSymbol, interval);
+        }
+    };
+
+    const stopInterval = () => {
+        if (intervalId !== null) {
+            clearInterval(intervalId);
+            intervalId = null;
+            
+            sendSymbol()
+        }
+    };
+
+    const resetCanvas = () => {
+        context!.fillStyle = '#000000';
+        context!.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     onMount(() => {
         context = canvas.getContext("2d");
 
         if (context) {
-            context.fillStyle = 'black';
-            context.fillRect(0, 0, canvas.width, canvas.height);
+            resetCanvas()
 
             canvas.addEventListener('mousedown', () => {
                 startDrawing();
@@ -88,8 +112,6 @@
             canvas.addEventListener('mouseup', () => {
                 stopDrawing();
                 context?.closePath();
-
-                sendSymbol()
             });
             canvas.addEventListener('mousemove', draw);
         }
@@ -98,20 +120,19 @@
             canvas.removeEventListener('mousedown', startDrawing);
             canvas.removeEventListener('mouseup', stopDrawing);
             canvas.removeEventListener('mousemove', draw);
+            stopInterval();
         };
     });
+
+    $: if ($clearCanvas) {
+        resetCanvas();
+        clearCanvas.set(false);
+    }
 </script>
 
-<!-- <div> -->
 <div class="canvas-container">
     <canvas bind:this={ canvas } id="drawingCanvas" width="28" height="28"></canvas>
 </div>
-
-    <!-- <button on:click={ sendSymbol }></button>
-
-    <label for="lineWidthSelector">{ line_width }</label>
-    <input bind:value={ line_width } id="lineWidthSelector" type="range" min=0.2 max=5 step="0.1">
-</div> -->
 
 <style>
     .canvas-container {
@@ -128,6 +149,7 @@
         width: 100%;
         height: 100%;
         image-rendering: pixelated;
-        background-color: black;
+        border: 3px solid #3C162F;
+        border-radius: 1em;
     }
 </style>

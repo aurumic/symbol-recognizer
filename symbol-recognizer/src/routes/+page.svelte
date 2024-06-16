@@ -1,40 +1,38 @@
 <script>
 	import Canvas from "../components/Canvas.svelte";
+	import ProgressBars from "../components/ProgressBars.svelte";
+	import Button from "../components/Button.svelte"
 </script>
 
 <svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
+	<title>Symbol Recognizer</title>
 </svelte:head>
 
 <div class="container">
-	<div class="container-fluid canvas-container">
-		<Canvas />
-	</div>
+    <div class="row vh-100">
+      	<div class="col d-flex flex-column justify-content-center align-items-center">
+			<div>
+				<Canvas />
+			</div>
+			
+			<div class="mt-1">
+				<Button />
+			</div>
+			
+			<div class="mt-5">
+				<ProgressBars />
+			</div>
+      	</div>
+    </div>
 </div>
 
 <style>
 	:global(body) {
-    	background-color: #110e1b;
+    	background-color: #161821;
     	background-size: cover;
     	background-repeat: no-repeat;
     	background-position: center;
-  	}
 
-	.container {
-    	display: flex;
-    	flex-direction: column;
-    	justify-content: center;
-    	align-items: center;
-    	min-height: calc(100vh - 56px);
-    	padding-top: 56px;
+		font-family: "Open Sans"
   	}
-
-	.canvas-container {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
 </style>

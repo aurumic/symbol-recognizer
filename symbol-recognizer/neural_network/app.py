@@ -38,13 +38,15 @@ def process_image():
     label_map = ''.join(sorted(set(label_map)))
 
     predictions = model.predict(tf_image)
-    predicted_index = np.argmax(predictions, axis=1)[0]
-    predicted_character = label_map[predicted_index]
-    predicted_probability = predictions[0][predicted_index]
-    
+    top_5_indices = np.argsort(predictions[0])[::-1][:5]
+    top_5_characters = [label_map[index] for index in top_5_indices]
+    top_5_probabilities = predictions[0][top_5_indices]
+
     print(f"predictions: {predictions}")
 
-    return jsonify({"prediction": f"{predicted_character} - {predicted_probability}"}), 200
+    top_5_predictions = [{"character": top_5_characters[i], "probability": float(top_5_probabilities[i])} for i in range(5)]
+
+    return jsonify(top_5_predictions), 200
 
 if __name__ == "__main__":
     app.run(debug=True)

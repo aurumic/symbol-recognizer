@@ -1,6 +1,6 @@
 a simple hand drawn symbol recognizer app powered by emnist byclass model with a svelte web page  
-also made exclusively for uni  
-also also will not be maintained  
+made exclusively for uni  
+also will not be maintained  
 
 
 what you need :  

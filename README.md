@@ -8,29 +8,30 @@ python
 node.js  
 
 
-to use first initialize a python virtual environment (venv) in core folder :  
+to use:
+- initialize a python virtual environment (venv) in core folder :  
 
 `cd ../path/to/repo/symbol-recognizer`  
 `python -m venv .venv`  
 
 
-activate venv :
+- activate venv :
 
 in cmd - `venv\Scripts\activate.bat`  
 in powershell - `venv\Scripts\Activate.ps1`
 
 
-install python dependencies :
+- install python dependencies :
 
 `pip install -r ./neural_network/requirements.txt`
 
 
-start app.py :
+- start app.py :
 
 `python ./neural_network/app.py`
 
 
-start svelte dev server :
+- start svelte dev server :
 
 `npm run dev`
 

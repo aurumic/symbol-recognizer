@@ -11,8 +11,8 @@ node.js
 to use:
 - initialize a python virtual environment (venv) in core folder :  
 
-`cd ../path/to/repo/symbol-recognizer`  
-`python -m venv .venv`  
+  `cd ../path/to/repo/symbol-recognizer`  
+  `python -m venv .venv`  
 
 
 - activate venv :

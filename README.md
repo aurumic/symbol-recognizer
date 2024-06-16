@@ -15,7 +15,7 @@ to use first initialize a python virtual environment (venv) in core folder :
 
 activate venv :
 
-in cmd - `venv\Scripts\activate.bat`\n
+in cmd - `venv\Scripts\activate.bat`  
 in powershell - `venv\Scripts\Activate.ps1`
 
 install python dependencies :

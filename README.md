@@ -1,17 +1,17 @@
-a simple hand drawn symbol recognizer app powered by emnist byclass model with a svelte web page
-also made exclusively for uni
-also also will not be maintained
+a simple hand drawn symbol recognizer app powered by emnist byclass model with a svelte web page  
+also made exclusively for uni  
+also also will not be maintained  
 
 
-what you need :
-python
-node.js
+what you need :  
+python  
+node.js  
 
 
-to use first initialize a python virtual environment (venv) in core folder :
+to use first initialize a python virtual environment (venv) in core folder :  
 
-`cd ../path/to/repo/symbol-recognizer`
-`python -m venv .venv`
+`cd ../path/to/repo/symbol-recognizer`  
+`python -m venv .venv`  
 
 activate venv :
 

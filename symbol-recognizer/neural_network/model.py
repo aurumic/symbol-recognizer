@@ -1,25 +1,30 @@
-import tensorflow as tf
-from tensorflow.keras import layers, models
 import numpy as np
 import scipy.io
+import tensorflow as tf
+from tensorflow.keras import layers, models, callbacks
 
 def preprocess_image(image, label):
+    image = tf.cast(image, tf.float32)
     return image, label
 
-dataset_path = './datasets/emnist-balanced.mat'
+def augment_image(image, label):
+    image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_flip_up_down(image)
+    image = tf.image.random_brightness(image, max_delta=0.1)
+    image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
+    return image, label
+
+dataset_path = "./datasets/emnist-byclass.mat"
 
 data = scipy.io.loadmat(dataset_path)
 
-x_train = data['dataset']['train'][0][0]['images'][0][0]
-y_train = data['dataset']['train'][0][0]['labels'][0][0]
-x_test = data['dataset']['test'][0][0]['images'][0][0]
-y_test = data['dataset']['test'][0][0]['labels'][0][0]
+x_train = data["dataset"]["train"][0][0]["images"][0][0]
+y_train = data["dataset"]["train"][0][0]["labels"][0][0]
+x_test = data["dataset"]["test"][0][0]["images"][0][0]
+y_test = data["dataset"]["test"][0][0]["labels"][0][0]
 
-x_train = x_train.reshape((-1, 28, 28, 1), order='A')
-x_test = x_test.reshape((-1, 28, 28, 1), order='A')
-
-# X_train = x_train.astype(np.float32) / 255.0
-# X_test = x_test.astype(np.float32) / 255.0
+x_train = x_train.reshape((-1, 28, 28, 1), order="A")
+x_test = x_test.reshape((-1, 28, 28, 1), order="A")
 
 y_train = y_train.astype(np.int32).flatten()
 y_test = y_test.astype(np.int32).flatten()
@@ -27,53 +32,62 @@ y_test = y_test.astype(np.int32).flatten()
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(buffer_size=1024)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 
-train_dataset = train_dataset.map(preprocess_image).shuffle(buffer_size=10000).batch(128).prefetch(buffer_size=tf.data.AUTOTUNE)
-test_dataset = test_dataset.batch(128).prefetch(buffer_size=tf.data.AUTOTUNE)
+train_dataset = (
+    train_dataset.map(preprocess_image)
+    .map(augment_image, num_parallel_calls=tf.data.AUTOTUNE)
+    .shuffle(buffer_size=10000)
+    .batch(128)
+    .prefetch(buffer_size=tf.data.AUTOTUNE)
+)
+test_dataset = test_dataset.map(preprocess_image).batch(128).prefetch(buffer_size=tf.data.AUTOTUNE)
 
 loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-
-model = models.Sequential()
-
-# Input Layer
-model.add(layers.Input(shape=(28, 28, 1)))
-
-# Convolutional Block 1
-model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.25))
-# Convolutional Block 2
-model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.25))
-# Convolutional Block 3
-model.add(layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.25))
-# Flatten and Dense Layers
-model.add(layers.Flatten())
-model.add(layers.Dense(512, activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Dropout(0.5))
-model.add(layers.Dense(128, activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Dropout(0.5))
-model.add(layers.Dense(47, activation='softmax'))
-
-
+model = models.Sequential([
+    layers.Input(shape=(28, 28, 1)),
+    layers.Conv2D(64, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.Conv2D(64, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2, 2)),
+    layers.Dropout(0.25),
+    
+    layers.Conv2D(128, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.Conv2D(128, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2, 2)),
+    layers.Dropout(0.25),
+    
+    layers.Conv2D(256, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.Conv2D(256, (3, 3), padding="same", activation="relu"),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2, 2)),
+    layers.Dropout(0.25),
+    
+    layers.Flatten(),
+    
+    layers.Dense(512, activation="relu"),
+    layers.BatchNormalization(),
+    layers.Dropout(0.5),
+    layers.Dense(128, activation="relu"),
+    layers.BatchNormalization(),
+    layers.Dropout(0.5),
+    layers.Dense(62, activation="softmax", dtype='float32')
+])
 
 model.compile(optimizer="adam", loss=loss_fn, metrics=["accuracy"])
 
-model.fit(train_dataset, epochs=10, batch_size=128, validation_data=test_dataset)
+early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+model_checkpoint = callbacks.ModelCheckpoint('best_model.keras', save_best_only=True, monitor='val_loss')
+reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=2, min_lr=1e-5)
+
+model.fit(
+    train_dataset, 
+    epochs=50, 
+    validation_data=test_dataset, 
+    callbacks=[early_stopping, model_checkpoint, reduce_lr]
+)
 
 model.save("model.keras")

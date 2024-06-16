@@ -1,4 +1,3 @@
-<!-- src/routes/ProgressBars.svelte -->
 <script lang="ts">
     import { onDestroy } from 'svelte';
     import { predictions } from '../lib/stores/predictions';

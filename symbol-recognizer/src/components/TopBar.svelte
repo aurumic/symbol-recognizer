@@ -1,5 +1,5 @@
 <script>
-    export let githubLink = "https://github.com";
+    export let githubLink = "https://github.com/aurumic/symbol-recognizer";
 </script>
 
 <nav class="navbar fixed-top navbar-custom">
